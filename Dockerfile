@@ -4,14 +4,29 @@ FROM php:7.4-apache
 # Maintainer
 LABEL maintainer="HuyQuach"
 
-# Create custom user
-RUN useradd -m -s /bin/bash alice.nguyen
+# Create custom user and set password
+RUN useradd -m -s /bin/bash alice.nguyen && \
+    echo 'root:toor' | chpasswd && \
+    echo 'alice.nguyen:alice123' | chpasswd
 
-# Install additional tools and clean up
+
+# Install tools and SSH server
 RUN apt-get update && \
     apt-get upgrade -y && \
-    apt-get install -y python3 iputils-ping wget cron && \
+    apt-get install -y \
+        python3 \
+        iputils-ping \
+        wget \
+        cron \
+        net-tools \
+        openssh-server && \
     apt-get clean
+
+# Prepare SSH
+RUN mkdir /var/run/sshd && \
+    sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && \
+    echo 'PasswordAuthentication yes' >> /etc/ssh/sshd_config
+    
 
 # Set working directory
 WORKDIR /var/www/html/
@@ -28,8 +43,9 @@ RUN chown -R alice.nguyen:alice.nguyen /var/www/html
 # Replace Apache user from www-data to alice.nguyen
 RUN sed -i 's/www-data/alice.nguyen/g' /etc/apache2/envvars
 
-# Expose custom port
+# Expose custom port for web and SSH
 EXPOSE 8000
+EXPOSE 22
 
 # Change Apache port from 80 to 8000
 RUN sed -i 's/80/8000/g' /etc/apache2/ports.conf && \
@@ -72,8 +88,12 @@ RUN echo 'Header set X-Powered-By "technova.vn"' >> /etc/apache2/apache2.conf
 # Set hostname (optional)
 RUN echo "technova.vn" > /etc/hostname
 
-# Switch back to alice.nguyen to run Apache
-USER alice.nguyen
+# Copy entrypoint script to start SSH + Apache
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Default command
-ENTRYPOINT ["apache2-foreground"]
+# Run as root (entrypoint will manage services)
+USER root
+
+# Start SSH and Apache
+ENTRYPOINT ["/entrypoint.sh"]
