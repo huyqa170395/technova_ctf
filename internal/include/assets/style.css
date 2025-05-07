@@ -1,0 +1,28 @@
+body {
+    margin: 0;
+    padding: 0;
+    background: black;
+    color: #00ff00;
+    font-family: "Courier New", Courier, monospace;
+    text-align: center;
+}
+
+.success {
+    margin-top: 20%;
+    color: #0f0;
+}
+
+.forbidden {
+    position: relative;
+    z-index: 1;
+}
+
+canvas#matrix {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    background: black;
+}

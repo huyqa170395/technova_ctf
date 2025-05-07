@@ -1,0 +1,59 @@
+# Base image
+FROM php:7.4-apache
+
+# Maintainer
+LABEL maintainer="HuyQuach"
+
+# Create custom user
+RUN useradd -m -s /bin/bash ctfuser
+
+# Set working directory
+WORKDIR /var/www/html/
+
+# Copy web source code
+COPY . /var/www/html/
+
+# Enable PHP error display
+RUN echo "display_errors=On\nerror_reporting=E_ALL" > /usr/local/etc/php/conf.d/errors.ini
+
+# Change ownership of web files to ctfuser
+RUN chown -R ctfuser:ctfuser /var/www/html
+
+# Replace Apache user from www-data to ctfuser
+RUN sed -i 's/www-data/ctfuser/g' /etc/apache2/envvars
+
+# Expose custom port
+EXPOSE 8000
+
+# Change Apache port from 80 to 8000
+RUN sed -i 's/80/8000/g' /etc/apache2/ports.conf && \
+    sed -i 's/:80>/:8000>/g' /etc/apache2/sites-available/000-default.conf
+
+# === USER FLAG SETUP ===
+
+# Copy generate-user-flag script
+COPY generate-user-flag.py /home/ctfuser/
+
+# Set permission and run the script as ctfuser
+USER ctfuser
+RUN python3 /home/ctfuser/generate-user-flag.py && \
+    rm /home/ctfuser/generate-user-flag.py && \
+    mv /home/ctfuser/user.txt /home/ctfuser/ && \
+    chmod 600 /home/ctfuser/user.txt
+
+# === ROOT FLAG SETUP ===
+
+# Switch to root
+USER root
+COPY generate-root-flag.py /root/
+RUN chmod 600 /root/generate-root-flag.py && \
+    python3 /root/generate-root-flag.py && \
+    rm /root/generate-root-flag.py && \
+    mv /root/root.txt /root/ && \
+    chmod 600 /root/root.txt
+
+# Switch back to ctfuser to run Apache
+USER ctfuser
+
+# Default command
+CMD ["apache2-foreground"]
