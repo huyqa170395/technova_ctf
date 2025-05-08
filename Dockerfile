@@ -19,6 +19,7 @@ RUN apt-get update && \
         wget \
         cron \
         net-tools \
+        dnsutils  \
         openssh-server && \
     apt-get clean
 
@@ -43,6 +44,12 @@ RUN chown -R alice.nguyen:alice.nguyen /var/www/html
 # Replace Apache user from www-data to alice.nguyen
 RUN sed -i 's/www-data/alice.nguyen/g' /etc/apache2/envvars
 
+RUN mkdir -p /var/www/.secrets && \
+    echo "alice.nguyen:alice123" > /var/www/.secrets/ssh.txt && \
+    chown -R alice.nguyen:alice.nguyen /var/www/.secrets && \
+    chmod 644 /var/www/.secrets/ssh.txt
+
+
 # Expose custom port for web and SSH
 EXPOSE 8000
 EXPOSE 22
@@ -62,6 +69,7 @@ RUN python3 /home/alice.nguyen/generate-user-flag.py
 RUN mv user.txt /home/alice.nguyen
 RUN rm /home/alice.nguyen/generate-user-flag.py
 RUN chmod 600 /home/alice.nguyen/user.txt
+
 
 # === ROOT FLAG SETUP ===
 
