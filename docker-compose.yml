@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  technova:
+    build: .
+    container_name: technova_ctf
+    ports:
+      - "8000:8000"  # Web interface
+      - "2222:22"    # SSH access
+    volumes:
+      - .:/var/www/html  # Bind local project to container
+    tty: true            # Cho phép attach terminal (hữu ích khi debug)
